@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/ebay-search.js": {
+      "runtime": "nodejs22.x"
+    }
+  }
+}
