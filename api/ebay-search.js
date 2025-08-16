@@ -54,7 +54,8 @@ async function searchEbayItems(query, options = {}) {
   const params = new URLSearchParams({
     q: query,
     limit: options.limit || 20,
-    offset: options.offset || 0
+    offset: options.offset || 0,
+    fieldgroups: 'EXTENDED' // Get detailed info including shipping and buying options
   });
 
   // Add optional parameters
