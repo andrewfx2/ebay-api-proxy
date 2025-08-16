@@ -55,13 +55,19 @@ async function searchEbayItems(query, options = {}) {
     q: query,
     limit: options.limit || 20,
     offset: options.offset || 0,
-    fieldgroups: 'EXTENDED' // Get detailed info including shipping and buying options
+    fieldgroups: 'EXTENDED,MATCHING_ITEMS,FULL' // Try multiple fieldgroups
   });
 
   // Add optional parameters
   if (options.sort) params.append('sort', options.sort);
   if (options.category_ids) params.append('category_ids', options.category_ids);
   if (options.filter) params.append('filter', options.filter);
+
+  // Add filter to include both auction and fixed price items
+  const existingFilter = options.filter || '';
+  const buyingOptionsFilter = 'buyingOptions:{FIXED_PRICE|AUCTION|BEST_OFFER}';
+  const combinedFilter = existingFilter ? `${existingFilter},${buyingOptionsFilter}` : buyingOptionsFilter;
+  params.set('filter', combinedFilter);
 
   try {
     const response = await fetch(`${BASE_URL}/buy/browse/v1/item_summary/search?${params}`, {
@@ -77,7 +83,12 @@ async function searchEbayItems(query, options = {}) {
       throw new Error(`Search failed: ${error.errors?.[0]?.message || response.statusText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    
+    // Debug: Log the API response to see what we're getting
+    console.log('eBay API Response sample:', JSON.stringify(data.itemSummaries?.[0], null, 2));
+    
+    return data;
   } catch (error) {
     console.error('Error searching items:', error);
     throw error;
@@ -143,61 +154,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('API Error:', error);
-    
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Internal server error'
-    });
-  }
-}
-
-// Alternative endpoint for getting item details
-// File: api/ebay-item.js
-export async function getItemHandler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    const { itemId } = req.query;
-
-    if (!itemId) {
-      return res.status(400).json({ error: 'Item ID is required' });
-    }
-
-    const token = await getApplicationToken();
-    
-    const response = await fetch(`${BASE_URL}/buy/browse/v1/item/${itemId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Item details failed: ${error.errors?.[0]?.message || response.statusText}`);
-    }
-
-    const itemData = await response.json();
-
-    res.status(200).json({
-      success: true,
-      data: itemData
-    });
-
-  } catch (error) {
-    console.error('Item API Error:', error);
     
     res.status(500).json({
       success: false,
