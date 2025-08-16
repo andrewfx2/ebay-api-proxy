@@ -2,17 +2,8 @@
   "name": "ebay-api-proxy",
   "version": "1.0.0",
   "description": "eBay API Proxy for Squarespace Integration",
-  "main": "index.js",
-  "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build step required'",
-    "start": "vercel dev"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "vercel": "latest"
-  },
+  "type": "module",
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   }
 }
